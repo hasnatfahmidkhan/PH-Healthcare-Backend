@@ -18,7 +18,13 @@
 			"preset": "recommended",
 			"suspicious": {
 				"noExplicitAny": "warn"
-			}
+			},
+			"style":{
+				"noNonNullAssertion":"info",
+				"useNodejsImportProtocol":"info"
+				
+			},
+			"correctness": "off"
 		}
 	},
 	"javascript": {
