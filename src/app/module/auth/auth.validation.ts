@@ -24,6 +24,11 @@ const PatientRegisterSchema = z.object({
     .optional(),
 });
 
+const EmailVerifySchema = z.object({
+  email: z.email({ error: "Email is Required" }),
+  otp: z.string().length(6),
+});
+
 const LoginSchema = z.object({
   email: z.email({ error: "Email is Required" }),
   password: z
@@ -64,4 +69,5 @@ export const UserValidation = {
   LoginSchema,
   ForgotPasswordSchema,
   ResetPasswordSchema,
+  EmailVerifySchema
 };

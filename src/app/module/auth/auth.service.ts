@@ -20,6 +20,7 @@ import type {
   ILoginUserPayload,
   IRegisterPatientPayload,
   IRequestUser,
+  IVerifyEmailPayload,
   TForgotPasswordPayload,
   TResetPasswordPayload,
 } from "./auth.interface";
@@ -38,28 +39,118 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 
   const hashedPassword = await bcrypt.hash(password, 8);
 
+  const otpKey = `patient-registration-otp:${email}`;
+  const verifyOTP = crypto.randomInt(100000, 1000000).toString();
+
+  await redisClient.set(otpKey, verifyOTP, {
+    expiration: {
+      type: "EX",
+      value: 5 * 60,
+    },
+  });
+
+  const redisUserDataPayload = { ...payload, password: hashedPassword };
+  const registraionKey = `patient-registration-data:${email}`;
+
+  await redisClient.set(registraionKey, JSON.stringify(redisUserDataPayload), {
+    expiration: {
+      type: "EX",
+      value: 5 * 60,
+    },
+  });
+
+  const html = await ejs.renderFile(
+    path.join(process.cwd(), "/src/app/templates/verifyEmailOtp.ejs"),
+    {
+      name: name,
+      otp: verifyOTP,
+      expiryMinutes: 5,
+      appName: config.app_name,
+      supportEmail: config.email_sender,
+      year: new Date().getFullYear(),
+    },
+  );
+
+  await transporter.sendMail({
+    from: `"${config.app_name}" <${config.email_sender}>`,
+    to: email,
+    subject: "Verify your email address",
+    html,
+  });
+
+  return null;
+};
+
+const verifyEmail = async (payload: IVerifyEmailPayload) => {
+  const email = payload.email.trim().toLowerCase();
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (user?.emailVerified) {
+    throw new Error("Email already verified");
+  }
+
+  if (user?.status === UserStatus.BLOCKED) {
+    throw new Error("User is blocked");
+  }
+
+  if (user?.isDeleted || user?.status === UserStatus.DELETED) {
+    throw new Error("User is deleted");
+  }
+
+  const otp = payload.otp;
+  const otpKey = `patient-registration-otp:${email}`;
+  const storedOtp = await redisClient.get(otpKey);
+
+  if (!storedOtp) {
+    throw new Error("OTP has expired or doesn't exist!");
+  }
+
+  if (storedOtp !== otp) {
+    throw new Error("Invalid OTP!");
+  }
+
+  await redisClient.del(otpKey);
+
+  const registraionKey = `patient-registration-data:${email}`;
+  const redisPatientData = await redisClient.get(registraionKey);
+
+  if (!redisPatientData) {
+    throw new Error("User doesn't exists in redis!");
+  }
+
+  const patientPayload: IRegisterPatientPayload = JSON.parse(redisPatientData);
+
   const createdUser = await prisma.user.create({
     data: {
-      name,
-      email,
-      password: hashedPassword,
+      name: patientPayload.name,
+      email: patientPayload.email,
+      password: patientPayload.password,
       role: Role.PATIENT,
       status: UserStatus.ACTIVE,
-      emailVerified: false,
+      emailVerified: true,
       patient: {
-        create: { name, email },
+        create: {
+          name: patientPayload.name,
+          email: patientPayload.email,
+          contactNumber: patientPayload.patient?.contactNumber ?? null,
+        },
       },
     },
     omit: { password: true },
     include: { patient: true },
   });
 
-  const { patient, ...user } = createdUser;
+  await redisClient.del(registraionKey);
+
+  const { patient, ...userData } = createdUser;
   const jwtPayload = {
-    userId: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
+    userId: userData.id,
+    name: userData.name,
+    email: userData.email,
+    role: userData.role,
   };
 
   const accessToken = jwtUtils.createToken(
@@ -74,8 +165,33 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
     config.jwt_refresh_expires_in as SignOptions,
   );
 
+  const html = await ejs.renderFile(
+    path.join(process.cwd(), "/src/app/templates/welcomeEmail.ejs"),
+    {
+      name: userData.name,
+      appName: config.app_name,
+      ctaUrl: `${config.frontend_url}/dashboard`,
+      ctaText: "Go to Dashboard",
+      features: [
+        "Book appointments with verified doctors in just a few clicks",
+        "Keep track of your upcoming and past consultations",
+        "Access your medical history and prescriptions in one place",
+        "Get reminders before your scheduled appointments",
+      ],
+      supportEmail: "support@myapp.com",
+      year: new Date().getFullYear(),
+    },
+  );
+
+  await transporter.sendMail({
+    from: `${config.app_name} <${config.email_sender}>`,
+    to: userData.email,
+    subject: `Welcome to ${config.app_name}!`,
+    html,
+  });
+
   return {
-    user,
+    userData,
     patient,
     accessToken,
     refreshToken,
@@ -394,19 +510,19 @@ const forgotPassword = async (payload: TForgotPasswordPayload) => {
   });
 
   const html = await ejs.renderFile(
-    path.join(process.cwd(), "src/app/templates/forgotPassword.ejs"),
+    path.join(process.cwd(), "/src/app/templates/forgotPassword.ejs"),
     {
       name: user.name,
       otp,
       expiryMinutes: 5,
-      appName: "PH HealthCare",
+      appName: config.app_name,
       supportEmail: config.email_sender,
       year: new Date().getFullYear(),
     },
   );
 
   await transporter.sendMail({
-    from: `"PH HealtCare" <${config.email_sender}>`,
+    from: `"${config.app_name}" <${config.email_sender}>`,
     to: user.email,
     subject: "Password Reset OTP",
     text: `Your password reset OTP is ${otp}. This OTP will expire in 5 minutes.`,
@@ -488,13 +604,13 @@ const resetPassword = async (payload: TResetPasswordPayload) => {
       loginUrl: `${config.frontend_url}/login`,
       supportUrl: `${config.frontend_url}/support`,
       supportEmail: config.email_sender,
-      appName: "PH HealthCare",
+      appName: config.app_name,
       year: new Date().getFullYear(),
     },
   );
 
   await transporter.sendMail({
-    from: `"PH HealthCare" <${config.email_sender}>`,
+    from: `"${config.app_name}" <${config.email_sender}>`,
     to: user.email,
     subject: "Password Reset Successful",
     text: "Your password has been reset successfully. If you did not make this change, please contact support immediately.",
@@ -511,4 +627,5 @@ export const AuthService = {
   googleLogin,
   forgotPassword,
   resetPassword,
+  verifyEmail,
 };

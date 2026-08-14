@@ -13,28 +13,41 @@ router.post(
   validateRequest(UserValidation.PatientRegisterSchema),
   AuthController.registerPatient,
 );
+
+// Verify Email
+router.post(
+  "/verify-email",
+  validateRequest(UserValidation.EmailVerifySchema),
+  AuthController.verifyEmail,
+);
+
 // Login USER
 router.post(
   "/login",
   validateRequest(UserValidation.LoginSchema),
   AuthController.loginUser,
 );
+
 // Get ME
 router.get(
   "/me",
   auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
   AuthController.getMe,
 );
+
 // Refresh Token
 router.post("/refresh-token", AuthController.refreshToken);
+
 // Google Login
 router.post("/google", AuthController.googleLogin);
+
 // Forget Password
 router.post(
   "/forgot-password",
   validateRequest(UserValidation.ForgotPasswordSchema),
   AuthController.forgotPassword,
 );
+
 // Reset Password
 router.post(
   "/reset-password",
