@@ -1,16 +1,45 @@
-import { Router } from 'express'
-import { Role } from '../../../generated/prisma/enums'
-import { auth } from '../../middleware/checkAuth'
-import { AuthController } from './auth.controller'
+import { Router } from "express";
+import { Role } from "../../../generated/prisma/enums";
+import { auth } from "../../middleware/checkAuth";
+import validateRequest from "../../middleware/validateRequest";
+import { AuthController } from "./auth.controller";
+import { UserValidation } from "./auth.validation";
 
 const router = Router();
 
-router.post('/register', AuthController.registerPatient)
-router.post('/login', AuthController.loginUser)
+// Register Patient
+router.post(
+  "/register",
+  validateRequest(UserValidation.PatientRegisterSchema),
+  AuthController.registerPatient,
+);
+// Login USER
+router.post(
+  "/login",
+  validateRequest(UserValidation.LoginSchema),
+  AuthController.loginUser,
+);
+// Get ME
 router.get(
-    '/me',
-    auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
-    AuthController.getMe,
-)
-router.post('/refresh-token', AuthController.refreshToken)
-export const AuthRoutes = router
+  "/me",
+  auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
+  AuthController.getMe,
+);
+// Refresh Token
+router.post("/refresh-token", AuthController.refreshToken);
+// Google Login
+router.post("/google", AuthController.googleLogin);
+// Forget Password
+router.post(
+  "/forgot-password",
+  validateRequest(UserValidation.ForgotPasswordSchema),
+  AuthController.forgotPassword,
+);
+// Reset Password
+router.post(
+  "/reset-password",
+  validateRequest(UserValidation.ResetPasswordSchema),
+  AuthController.resetPassword,
+);
+
+export const AuthRoutes = router;

@@ -5,15 +5,15 @@ import { Prisma } from "../../generated/prisma/client";
 import config from "../config";
 
 export const globalErrorHandler = async (
-	// biome-ignore lint/suspicious/noExplicitAny: <-- Reason: This is a global error handler, and the error can be of any type. -->
-	err: any,
-	_req: Request,
-	res: Response,
-	_next: NextFunction,
+  // biome-ignore lint/suspicious/noExplicitAny: <-- Reason: This is a global error handler, and the error can be of any type. -->
+  err: any,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
 ) => {
-	if (config.node_env === "development") {
-		console.log("Error from Global Error Handler", err);
-	}
+  if (config.node_env === "development") {
+    console.log("Error from Global Error Handler", err);
+  }
 
   let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;
   let errorMessage = err.message || "Internal Server Error";
@@ -47,20 +47,27 @@ export const globalErrorHandler = async (
   } else if (err instanceof Prisma.PrismaClientUnknownRequestError) {
     statusCode = httpStatus.INTERNAL_SERVER_ERROR;
     errorMessage = "Error occurred during query execution";
+  } else if (err instanceof ZodError) {
+    statusCode = httpStatus.BAD_REQUEST;
+    errorName = "ValidationError";
+    errorMessage = err.issues.map((issue) => {
+      const fieldPath = issue.path.join(".");
+      return fieldPath ? `'${fieldPath}' - ${issue.message}` : issue.message;
+    });
   } else if (err instanceof Error) {
     errorMessage = err.message;
   }
 
-	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-		success: false,
-		statusCode: statusCode || httpStatus.INTERNAL_SERVER_ERROR,
-		name:
-			config.node_env === "development" ? errorName : "Internal Server Error",
-		message:
-			config.node_env === "development"
-				? errorMessage
-				: "Internal Server Error",
-		error: config.node_env === "development" ? err : undefined,
-		stack: config.node_env === "development" ? err.stack : undefined,
-	});
+  res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+    success: false,
+    statusCode: statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+    name:
+      config.node_env === "development" ? errorName : "Internal Server Error",
+    message:
+      config.node_env === "development"
+        ? errorMessage
+        : "Internal Server Error",
+    error: config.node_env === "development" ? err : undefined,
+    stack: config.node_env === "development" ? err.stack : undefined,
+  });
 };
