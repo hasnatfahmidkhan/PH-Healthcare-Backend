@@ -397,6 +397,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
         },
       });
     } else {
+      // google registration
       user = await prisma.user.create({
         data: {
           email: googleIdTokenPayload.email,
@@ -412,6 +413,31 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
             },
           },
         },
+      });
+
+      const html = await ejs.renderFile(
+        path.join(process.cwd(), "/src/app/templates/welcomeEmail.ejs"),
+        {
+          name: user.name,
+          appName: config.app_name,
+          ctaUrl: `${config.frontend_url}/dashboard`,
+          ctaText: "Go to Dashboard",
+          features: [
+            "Book appointments with verified doctors in just a few clicks",
+            "Keep track of your upcoming and past consultations",
+            "Access your medical history and prescriptions in one place",
+            "Get reminders before your scheduled appointments",
+          ],
+          supportEmail: "support@myapp.com",
+          year: new Date().getFullYear(),
+        },
+      );
+
+      await transporter.sendMail({
+        from: `${config.app_name} <${config.email_sender}>`,
+        to: user.email,
+        subject: `Welcome to ${config.app_name}!`,
+        html,
       });
     }
   }
