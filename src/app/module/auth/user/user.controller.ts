@@ -9,6 +9,11 @@ const updateProfilePhoto = catchAsync(async (req: Request, res: Response) => {
     throw new Error("No file provided!");
   }
 
+  if (req.file.size > 500 * 1024) {
+    // 500 KB in bytes
+    throw new Error("File size exceeds the limit of 500KB!");
+  }
+
   const userId = req.user?.userId as string;
 
   const result = await userService.updateProfilePhoto(
