@@ -1,16 +1,20 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, {
+  NextFunction,
   type Application,
   type Request,
   type Response,
 } from "express";
 import httpStatus from "http-status";
 import config from "./app/config";
+import { getBkashIdToken } from "./app/lib/bkash";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
+import { appointmentRoutes } from "./app/module/appointment/appointment.route";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { userRoutes } from "./app/module/auth/user/user.route";
+import { sendResponse } from "./app/utils/sendResponse";
 
 const app: Application = express();
 
@@ -28,9 +32,25 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
+app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const grantToken = await getBkashIdToken();
+    console.log(grantToken);
+    sendResponse(res, {
+      success: true,
+      message: "success",
+      statusCode: 200,
+      data: null,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 app.use("/api/v1/auth", AuthRoutes);
 
 app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/appointment", appointmentRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
