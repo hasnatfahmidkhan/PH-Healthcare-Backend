@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { Role } from "../../generated/prisma/enums";
+import { DoctorVeificationStatus, Role } from "../../generated/prisma/enums";
 import config from "../config";
 import { prisma } from "../lib/prisma";
 
@@ -145,6 +145,17 @@ export const seedTesterDoctor = async () => {
         role: Role.DOCTOR,
         needPasswordChange: false,
         emailVerified: true,
+        doctors: {
+          create: {
+            email,
+            name,
+            experienceYears: 5,
+            licenseNumber: "BMDC00000",
+            specialization: "Physiology",
+            qualifications: "MBBS",
+            verificationStatus: DoctorVeificationStatus.APPROVED,
+          },
+        },
       },
     });
 

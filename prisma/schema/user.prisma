@@ -16,6 +16,7 @@ model User {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   patient            Patient?
+  doctors            doctor?
 
   @@unique([email])
   @@map("users")
