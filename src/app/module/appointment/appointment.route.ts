@@ -17,6 +17,12 @@ router.post(
   appointmentController.bookAppointment,
 );
 
+router.post(
+  "/cancel-appointment",
+  auth(Role.PATIENT, Role.ADMIN, Role.SUPER_ADMIN),
+  appointmentController.cancelAppointment,
+);
+
 // bkash callback api
 router.get(
   "/book-appointment/payment/callback",

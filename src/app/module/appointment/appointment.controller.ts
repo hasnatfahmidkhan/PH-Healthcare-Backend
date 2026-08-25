@@ -35,6 +35,21 @@ class AppointmentController {
     },
   );
 
+  cancelAppointment = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const payload = req.body;
+      const user = req.user!;
+      const result = await appointmentService.cancelAppointment(payload, user);
+
+      sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.OK,
+        message: "Appointment cancel and refund successfully",
+        data: result,
+      });
+    },
+  );
+
   bookAppointmentCallback = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
       const { redirectUrl } = await appointmentService.bookAppointmentCallback(
