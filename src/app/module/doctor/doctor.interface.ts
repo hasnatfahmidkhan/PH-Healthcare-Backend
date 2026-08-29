@@ -1,6 +1,9 @@
 import z from "zod";
 import {
   DoctorApplicationSchema,
+  
+  DoctorQuerySchema,
+  
   DoctorVerifySchema,
 } from "./doctor.validation";
 
@@ -11,3 +14,5 @@ export interface IVerifyDoctorEmailPayload {
 }
 
 export type DoctorVerifyPayload = z.infer<typeof DoctorVerifySchema>;
+
+export type DoctorQueryPayload = z.infer<typeof DoctorQuerySchema>;

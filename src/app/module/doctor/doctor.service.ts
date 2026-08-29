@@ -3,6 +3,7 @@ import { UploadApiResponse } from "cloudinary";
 import crypto from "crypto";
 import ejs from "ejs";
 import path from "path";
+import { Prisma } from "../../../generated/prisma/client";
 import {
   DoctorVeificationStatus,
   Role,
@@ -16,6 +17,7 @@ import { redisClient } from "../../lib/redis";
 import { IRequestUser } from "../../middleware/checkAuth";
 import {
   DoctorApplicationInput,
+  DoctorQueryPayload,
   DoctorVerifyPayload,
   IVerifyDoctorEmailPayload,
 } from "./doctor.interface";
@@ -282,6 +284,119 @@ class DoctorService {
           : "Update on Your Doctor Application",
       html,
     });
+  };
+
+  getAllDoctors = async (query: DoctorQueryPayload) => {
+    const { searchTerm, verificationStatus, page, limit, sortBy, sortOrder } =
+      query;
+
+    // Pagination
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Build where condition
+    const whereConditions: Prisma.doctorWhereInput = {
+      isDeleted: false,
+    };
+
+    // Search
+    if (searchTerm) {
+      whereConditions.OR = [
+        {
+          name: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          specialization: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          licenseNumber: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    // Verification status filter
+    if (verificationStatus) {
+      whereConditions.verificationStatus = verificationStatus;
+    }
+
+    // Get doctors + total count concurrently
+    const [allDoctors, totalDoctors] = await prisma.$transaction([
+      prisma.doctor.findMany({
+        where: whereConditions,
+
+        skip,
+        take: limitNumber,
+
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          address: true,
+          contactNumber: true,
+          specialization: true,
+          licenseNumber: true,
+          qualifications: true,
+          experienceYears: true,
+          bio: true,
+          conultationFee: true,
+          verificationStatus: true,
+          rejectionReason: true,
+          reviewedBy: true,
+          reviewedAt: true,
+          resume: true,
+          additionalFiles: true,
+          isDeleted: true,
+          createdAt: true,
+          updatedAt: true,
+
+          user: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              status: true,
+            },
+          },
+        },
+      }),
+
+      prisma.doctor.count({
+        where: whereConditions,
+      }),
+    ]);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalDoctors / limitNumber);
+
+    return {
+      meta: {
+        page: pageNumber,
+        limit: limitNumber,
+        total: totalDoctors,
+        totalPages,
+      },
+      data: allDoctors,
+    };
   };
 }
 

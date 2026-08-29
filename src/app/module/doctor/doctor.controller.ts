@@ -3,7 +3,10 @@ import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { doctorService } from "./doctor.service";
-import { DoctorApplicationSchema } from "./doctor.validation";
+import {
+  DoctorApplicationSchema,
+  DoctorQuerySchema,
+} from "./doctor.validation";
 
 class DoctorController {
   verifyDoctorEmail = catchAsync(
@@ -63,6 +66,20 @@ class DoctorController {
         statusCode: httpStatus.OK,
         success: true,
         message: "Approve Doctor Successfully.",
+        data: result,
+      });
+    },
+  );
+
+  getAllDoctors = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const validatedQuery = DoctorQuerySchema.parse(req.query);
+      const result = await doctorService.getAllDoctors(validatedQuery);
+
+      sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Get All Doctors Successfully.",
         data: result,
       });
     },

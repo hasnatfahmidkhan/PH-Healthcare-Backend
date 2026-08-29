@@ -70,3 +70,17 @@ export const DoctorVerifySchema = z
       path: ["rejectedReason"],
     },
   );
+
+export const QuerySchema = z.object({
+  searchTerm: z.string().trim().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  sortBy: z
+    .enum(["name", "createdAt", "experienceYears", "consultationFee"])
+    .default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+});
+
+export const DoctorQuerySchema = QuerySchema.extend({
+  verificationStatus: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
+});

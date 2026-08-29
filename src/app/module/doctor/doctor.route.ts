@@ -37,4 +37,10 @@ router.patch(
   doctorController.approveDoctor,
 );
 
+router.get(
+  "/all-doctors",
+  auth(Role.ADMIN, Role.SUPER_ADMIN),
+  doctorController.getAllDoctors,
+);
+
 export const doctorRoutes = router;
