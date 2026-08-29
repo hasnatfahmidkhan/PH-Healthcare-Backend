@@ -19,7 +19,8 @@ model doctor {
     reviewedAt         DateTime?
 
     resume          String?
-    additionalFiles String[]
+    resumePublicId  String?
+    additionalFiles Json?
 
     isDeleted Boolean   @default(false)
     deletedAt DateTime?
@@ -32,5 +33,5 @@ model doctor {
 
     @@index([email], name: "idx_doctor_email")
     @@index([licenseNumber], name: "idx_doctor_licenseNumber")
-    @@map("doctor")
+    @@map("doctors")
 }

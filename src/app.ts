@@ -13,7 +13,8 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { appointmentRoutes } from "./app/module/appointment/appointment.route";
 import { AuthRoutes } from "./app/module/auth/auth.route";
-import { userRoutes } from "./app/module/auth/user/user.route";
+import { doctorRoutes } from "./app/module/doctor/doctor.route";
+import { userRoutes } from "./app/module/user/user.route";
 import { sendResponse } from "./app/utils/sendResponse";
 
 const app: Application = express();
@@ -51,6 +52,7 @@ app.use("/api/v1/auth", AuthRoutes);
 
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/appointment", appointmentRoutes);
+app.use("/api/v1/doctor", doctorRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {

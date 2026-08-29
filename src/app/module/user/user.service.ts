@@ -1,6 +1,6 @@
 import { UploadApiResponse } from "cloudinary";
-import { cloudinary } from "../../../lib/cloudinary";
-import { prisma } from "../../../lib/prisma";
+import { cloudinary } from "../../lib/cloudinary";
+import { prisma } from "../../lib/prisma";
 
 const updateProfilePhoto = async (buffer: Buffer, userId: string) => {
   const currentUser = await prisma.user.findUnique({
