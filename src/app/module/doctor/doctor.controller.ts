@@ -18,6 +18,7 @@ class DoctorController {
       });
     },
   );
+
   applyAsDoctor = catchAsync(
     async (req: Request, res: Response, next: NextFunction) => {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -49,6 +50,19 @@ class DoctorController {
         statusCode: httpStatus.OK,
         success: true,
         message: "Apply as doctor successfully",
+        data: result,
+      });
+    },
+  );
+
+  approveDoctor = catchAsync(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const result = await doctorService.approveDoctor(req.body, req.user!);
+
+      sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Approve Doctor Successfully.",
         data: result,
       });
     },

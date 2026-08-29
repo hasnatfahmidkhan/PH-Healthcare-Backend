@@ -3,14 +3,20 @@ import { UploadApiResponse } from "cloudinary";
 import crypto from "crypto";
 import ejs from "ejs";
 import path from "path";
-import { Role, UserStatus } from "../../../generated/prisma/enums";
+import {
+  DoctorVeificationStatus,
+  Role,
+  UserStatus,
+} from "../../../generated/prisma/enums";
 import config from "../../config";
 import { cloudinary } from "../../lib/cloudinary";
 import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
 import { redisClient } from "../../lib/redis";
+import { IRequestUser } from "../../middleware/checkAuth";
 import {
   DoctorApplicationInput,
+  DoctorVerifyPayload,
   IVerifyDoctorEmailPayload,
 } from "./doctor.interface";
 
@@ -190,6 +196,92 @@ class DoctorService {
     });
 
     return doctorApplication;
+  };
+
+  approveDoctor = async (
+    payload: DoctorVerifyPayload,
+    reviewer: IRequestUser,
+  ) => {
+    const { doctorId, verificationStatus, rejectedReason } = payload;
+
+    const doctor = await prisma.doctor.findUnique({
+      where: {
+        id: doctorId,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!doctor) {
+      throw new Error("Doctor Applicaton not found!");
+    }
+
+    if (doctor.isDeleted) {
+      throw new Error("Doctor Applicaton has been deleted!");
+    }
+
+    if (!doctor.user.emailVerified) {
+      throw new Error(
+        "Doctor Has not Verified Their Email Yet. Application can not be Reviewed!",
+      );
+    }
+
+    if (doctor.verificationStatus !== DoctorVeificationStatus.PENDING) {
+      throw new Error(
+        `Doctor Application Has already Been ${doctor.verificationStatus.toLocaleLowerCase()}`,
+      );
+    }
+
+    if (
+      verificationStatus === DoctorVeificationStatus.REJECTED &&
+      !doctor.rejectionReason
+    ) {
+      throw new Error(
+        "Rejection Reason Is Required When Rejecting A Doctor Applicaion.",
+      );
+    }
+
+    const updatedDoctor = await prisma.doctor.update({
+      where: { id: doctorId },
+      data: {
+        verificationStatus,
+        rejectionReason:
+          verificationStatus === DoctorVeificationStatus.REJECTED
+            ? rejectedReason
+            : null,
+        reviewedAt: new Date(),
+        reviewedBy: reviewer.userId,
+      },
+    });
+
+    const html = await ejs.renderFile(
+      path.join(
+        process.cwd(),
+        "/src/app/templates/doctorApplicatoionReviewed.ejs",
+      ),
+      {
+        appName: config.app_name,
+        name: doctor.name,
+        status: verificationStatus,
+        reviewedBy: reviewer.name,
+        rejectedReason: payload.rejectedReason,
+        ctaUrl: `${config.frontend_url}/doctor/application`,
+        ctaText: "View Application",
+        supportEmail: config.email_sender,
+        year: new Date().getFullYear(),
+      },
+    );
+
+    await transporter.sendMail({
+      from: `"${config.app_name}" <${config.email_sender}>`,
+      to: doctor.email,
+      subject:
+        verificationStatus === "APPROVED"
+          ? "Your Doctor Application Has Been Approved"
+          : "Update on Your Doctor Application",
+      html,
+    });
   };
 }
 

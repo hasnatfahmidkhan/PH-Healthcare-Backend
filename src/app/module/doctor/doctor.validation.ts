@@ -1,7 +1,10 @@
 import * as z from "zod";
+import { DoctorVeificationStatus } from "../../../generated/prisma/enums";
 
 export const UserBaseSchema = z.object({
-  name: z.string({error: "Name is required"}).min(2, "Name must be at least 2 characters long"),
+  name: z
+    .string({ error: "Name is required" })
+    .min(2, "Name must be at least 2 characters long"),
   email: z.email("Invalid email address format"),
 });
 
@@ -45,3 +48,25 @@ export const DoctorApplicationSchema = z.object({
   user: UserBaseSchema,
   doctor: DoctorBaseSchema,
 });
+
+export const DoctorVerifySchema = z
+  .object({
+    doctorId: z.uuid("Doctor ID is required."),
+    verificationStatus: z.enum([
+      DoctorVeificationStatus.APPROVED,
+      DoctorVeificationStatus.REJECTED,
+    ]),
+    rejectedReason: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.verificationStatus === DoctorVeificationStatus.REJECTED) {
+        return !!data.rejectedReason && data.rejectedReason.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Rejection reason is required when the application is rejected.",
+      path: ["rejectedReason"],
+    },
+  );

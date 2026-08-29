@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>
+    Doctor Application
+    <%= status === 'APPROVED' ? 'Approved' : 'Rejected' %>
+    - <%= appName %>
+  </title>
+</head>
+
+<body style="margin:0; padding:0; background-color:#f4f4f7; font-family:Arial, Helvetica, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background-color:#f4f4f7; padding:40px 0;">
+    <tr>
+      <td align="center">
+
+        <!-- Main Container -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:480px; background-color:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <% if (status === 'APPROVED') { %>
+              <td style="background-color:#16a34a; padding:32px; text-align:center;">
+                <h1 style="color:#ffffff; margin:0; font-size:22px; line-height:1.3;">
+                  <%= appName %>
+                </h1>
+              </td>
+            <% } else { %>
+              <td style="background-color:#dc2626; padding:32px; text-align:center;">
+                <h1 style="color:#ffffff; margin:0; font-size:22px; line-height:1.3;">
+                  <%= appName %>
+                </h1>
+              </td>
+            <% } %>
+          </tr>
+
+          <!-- ================= BODY ================= -->
+          <tr>
+            <td style="padding:32px;">
+              <% if (status === 'APPROVED') { %>
+                <!-- Approved -->
+                <h2 style="margin:0 0 20px; color:#111827; font-size:22px; line-height:1.5; text-align:center;">
+                  Doctor Application Approved! 🎉
+                </h2>
+
+                <p style="margin:0 0 16px; color:#4b5563; font-size:15px; line-height:1.6;">
+                  Dear <strong><%= name %></strong>,
+                </p>
+
+                <p style="margin:0; color:#4b5563; font-size:15px; line-height:1.6;">
+                  We're pleased to inform you that your doctor application has been reviewed and <strong>approved</strong>. You can now continue using the doctor features available on <%= appName %>.
+                </p>
+
+                <!-- Status Box -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; margin:24px 0; background-color:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px;">
+                  <tr>
+                    <td style="padding:16px;">
+                      <p style="margin:0 0 8px; color:#166534; font-size:14px;">
+                        <strong>Application Status</strong>
+                      </p>
+                      <p style="margin:0; color:#15803d; font-size:15px; font-weight:bold;">
+                        ✓ Approved
+                      </p>
+                      <% if (locals.reviewedBy) { %>
+                        <p style="margin:10px 0 0; color:#4b5563; font-size:13px;">
+                          Reviewed by: <strong><%= reviewedBy %></strong>
+                        </p>
+                      <% } %>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- CTA -->
+                <% if (locals.ctaUrl && locals.ctaText) { %>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+                    <tr>
+                      <td align="center" style="padding:4px 0 28px;">
+                        <a href="<%= ctaUrl %>" style="display:inline-block; background-color:#16a34a; color:#ffffff; text-decoration:none; font-size:15px; font-weight:bold; padding:12px 32px; border-radius:6px;">
+                          <%= ctaText %>
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                <% } %>
+
+                <p style="margin:0; color:#4b5563; font-size:14px; line-height:1.6;">
+                  Thank you for choosing <%= appName %>. We look forward to having you as part of our healthcare community.
+                </p>
+
+              <% } else if (status === 'REJECTED') { %>
+                <!-- Rejected -->
+                <h2 style="margin:0 0 20px; color:#111827; font-size:22px; line-height:1.5; text-align:center;">
+                  Doctor Application Update
+                </h2>
+
+                <p style="margin:0 0 16px; color:#4b5563; font-size:15px; line-height:1.6;">
+                  Dear <strong><%= name %></strong>,
+                </p>
+
+                <p style="margin:0; color:#4b5563; font-size:15px; line-height:1.6;">
+                  Thank you for applying to become a doctor on <%= appName %>. After reviewing your application, we regret to inform you that your application has been <strong>rejected</strong> at this time.
+                </p>
+
+                <!-- Status Box -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; margin:24px 0; background-color:#fef2f2; border:1px solid #fecaca; border-radius:6px;">
+                  <tr>
+                    <td style="padding:16px;">
+                      <p style="margin:0 0 8px; color:#991b1b; font-size:14px;">
+                        <strong>Application Status</strong>
+                      </p>
+                      <p style="margin:0; color:#dc2626; font-size:15px; font-weight:bold;">
+                        ✕ Rejected
+                      </p>
+                      <% if (locals.reviewedBy) { %>
+                        <p style="margin:10px 0 0; color:#4b5563; font-size:13px;">
+                          Reviewed by: <strong><%= reviewedBy %></strong>
+                        </p>
+                      <% } %>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Rejection Reason -->
+                <% if (locals.rejectedReason) { %>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; margin:24px 0; background-color:#f9fafb; border:1px solid #e5e7eb; border-radius:6px;">
+                    <tr>
+                      <td style="padding:16px;">
+                        <p style="margin:0 0 8px; color:#111827; font-size:14px; font-weight:bold;">
+                          Reason for Rejection
+                        </p>
+                        <p style="margin:0; color:#4b5563; font-size:14px; line-height:1.6;">
+                          <%= rejectedReason %>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                <% } %>
+
+                <p style="margin:0; color:#4b5563; font-size:14px; line-height:1.6;">
+                  If you believe this decision was made in error or you would like more information, please contact our support team.
+                </p>
+              <% } %>
+            </td>
+          </tr>
+
+          <!-- ================= FOOTER ================= -->
+          <tr>
+            <td style="background-color:#f9fafb; padding:20px 32px; text-align:center; border-top:1px solid #e5e7eb;">
+              <p style="margin:0; color:#9ca3af; font-size:12px; line-height:1.5;">
+                Need help? Contact us at
+                <a href="mailto:<%= supportEmail %>" style="color:#4f46e5; text-decoration:none;">
+                  <%= supportEmail %>
+                </a>
+              </p>
+              <p style="margin:8px 0 0; color:#9ca3af; font-size:12px; line-height:1.5;">
+                &copy; <%= year %> <%= appName %>. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
