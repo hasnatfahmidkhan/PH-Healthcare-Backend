@@ -3,6 +3,7 @@ import httpStatus from "http-status";
 import { ZodError } from "zod";
 import { Prisma } from "../../generated/prisma/client";
 import config from "../config";
+import AppError from "../utils/AppError";
 
 export const globalErrorHandler = async (
   // biome-ignore lint/suspicious/noExplicitAny: <-- Reason: This is a global error handler, and the error can be of any type. -->
@@ -54,11 +55,14 @@ export const globalErrorHandler = async (
       const fieldPath = issue.path.join(".");
       return fieldPath ? `'${fieldPath}' - ${issue.message}` : issue.message;
     });
+  } else if (err instanceof AppError) {
+    statusCode = err.statusCode;
+    errorMessage = err.message;
   } else if (err instanceof Error) {
     errorMessage = err.message;
   }
 
-  res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+  res.status(statusCode).json({
     success: false,
     statusCode: statusCode || httpStatus.INTERNAL_SERVER_ERROR,
     name:

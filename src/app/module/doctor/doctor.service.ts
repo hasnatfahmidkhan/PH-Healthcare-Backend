@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { UploadApiResponse } from "cloudinary";
 import crypto from "crypto";
 import ejs from "ejs";
+import httpStatus from "http-status";
 import path from "path";
 import { Prisma } from "../../../generated/prisma/client";
 import {
@@ -15,6 +16,7 @@ import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
 import { redisClient } from "../../lib/redis";
 import { IRequestUser } from "../../middleware/checkAuth";
+import AppError from "../../utils/AppError";
 import {
   DoctorApplicationInput,
   DoctorQueryPayload,
@@ -31,19 +33,22 @@ class DoctorService {
     });
 
     if (!user) {
-      throw new Error("Doctor Application not found. please apply again.");
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        "Doctor Application not found. please apply again.",
+      );
     }
 
     if (user.emailVerified) {
-      throw new Error("Email already verified");
+      throw new AppError(httpStatus.BAD_REQUEST, "Email already verified");
     }
 
     if (user.status === UserStatus.BLOCKED) {
-      throw new Error("User is blocked");
+      throw new AppError(httpStatus.FORBIDDEN, "User is blocked");
     }
 
     if (user.isDeleted || user.status === UserStatus.DELETED) {
-      throw new Error("User is deleted");
+      throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
     }
 
     const otp = payload.otp;
@@ -51,13 +56,14 @@ class DoctorService {
     const storedOtp = await redisClient.get(otpKey);
 
     if (!storedOtp) {
-      throw new Error(
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
         "OTP has expired. Your Application Window has closed, Please apply again.",
       );
     }
 
     if (storedOtp !== otp) {
-      throw new Error("OTP Does not Match!");
+      throw new AppError(httpStatus.BAD_REQUEST, "OTP Does not Match!");
     }
     await redisClient.del(otpKey);
 
@@ -86,7 +92,10 @@ class DoctorService {
     });
 
     if (isUserExists) {
-      throw new Error("User already exists with this email.");
+      throw new AppError(
+        httpStatus.CONFLICT,
+        "User already exists with this email.",
+      );
     }
 
     const resumeUploadResult = await new Promise<UploadApiResponse>(
@@ -99,7 +108,12 @@ class DoctorService {
           (err, result) => {
             if (err) return reject(err);
             if (!result)
-              return reject(new Error("Upload failed, no result received."));
+              return reject(
+                new AppError(
+                  httpStatus.INTERNAL_SERVER_ERROR,
+                  "Upload failed, no result received.",
+                ),
+              );
             resolve(result);
           },
         );
@@ -122,7 +136,12 @@ class DoctorService {
             (err, result) => {
               if (err) return reject(err);
               if (!result)
-                return reject(new Error("Upload failed, no result received."));
+                return reject(
+                  new AppError(
+                    httpStatus.INTERNAL_SERVER_ERROR,
+                    "Upload failed, no result received.",
+                  ),
+                );
               resolve(result);
             },
           );
@@ -216,21 +235,26 @@ class DoctorService {
     });
 
     if (!doctor) {
-      throw new Error("Doctor Applicaton not found!");
+      throw new AppError(httpStatus.NOT_FOUND, "Doctor Applicaton not found!");
     }
 
     if (doctor.isDeleted) {
-      throw new Error("Doctor Applicaton has been deleted!");
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Doctor Applicaton has been deleted!",
+      );
     }
 
     if (!doctor.user.emailVerified) {
-      throw new Error(
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
         "Doctor Has not Verified Their Email Yet. Application can not be Reviewed!",
       );
     }
 
     if (doctor.verificationStatus !== DoctorVeificationStatus.PENDING) {
-      throw new Error(
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
         `Doctor Application Has already Been ${doctor.verificationStatus.toLocaleLowerCase()}`,
       );
     }
@@ -239,7 +263,8 @@ class DoctorService {
       verificationStatus === DoctorVeificationStatus.REJECTED &&
       !doctor.rejectionReason
     ) {
-      throw new Error(
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
         "Rejection Reason Is Required When Rejecting A Doctor Applicaion.",
       );
     }

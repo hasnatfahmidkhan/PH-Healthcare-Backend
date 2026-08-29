@@ -10,7 +10,6 @@ const validateRequest = (schema: ZodObject): RequestHandler => {
     if (!result.success) {
       console.log(result.error);
       console.log(result.error.issues);
-      //   throw new Error(result.error.issues[0].message);
       throw result.error;
     }
 

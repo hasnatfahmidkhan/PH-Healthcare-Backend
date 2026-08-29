@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
+import AppError from "../../utils/AppError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { doctorService } from "./doctor.service";
@@ -40,7 +41,7 @@ class DoctorController {
           .map((issue) => issue.message)
           .join(", ");
 
-        throw new Error(errorMessages);
+        throw new AppError(httpStatus.BAD_REQUEST, errorMessages);
       }
 
       const result = await doctorService.applyAsDoctor(

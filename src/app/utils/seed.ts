@@ -1,7 +1,9 @@
 import bcrypt from "bcryptjs";
+import httpStatus from "http-status";
 import { DoctorVeificationStatus, Role } from "../../generated/prisma/enums";
 import config from "../config";
 import { prisma } from "../lib/prisma";
+import AppError from "./AppError";
 
 export const seedSuperAdmin = async () => {
   try {
@@ -21,7 +23,8 @@ export const seedSuperAdmin = async () => {
     const password = config.super_admin_password;
 
     if (!name || !email || !password) {
-      throw new Error(
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
         "Super Admin Name , Email, Password Missing In Env File!!!",
       );
     }
@@ -74,7 +77,8 @@ export const seedTesterAdmin = async () => {
     const password = config.tester_admin_password;
 
     if (!name || !email || !password) {
-      throw new Error(
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
         "Tester Admin Name , Email, Password Missing In Env File!!!",
       );
     }
@@ -127,7 +131,8 @@ export const seedTesterDoctor = async () => {
     const password = config.tester_admin_password;
 
     if (!name || !email || !password) {
-      throw new Error(
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
         "Tester Doctor Name , Email, Password Missing In Env File!!!",
       );
     }
