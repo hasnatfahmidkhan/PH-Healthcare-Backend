@@ -1,4 +1,4 @@
-model doctor {
+model Doctor {
     id            String  @id @default(uuid())
     name          String
     email         String  @unique
@@ -28,8 +28,10 @@ model doctor {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    userId String @unique
-    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    userId        String         @unique
+    user          User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    schedules     Schedule[]
+    appoointments Appoointment[]
 
     @@index([email], name: "idx_doctor_email")
     @@index([licenseNumber], name: "idx_doctor_licenseNumber")

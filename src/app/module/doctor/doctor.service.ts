@@ -269,7 +269,7 @@ class DoctorService {
       );
     }
 
-    const updatedDoctor = await prisma.doctor.update({
+    await prisma.doctor.update({
       where: { id: doctorId },
       data: {
         verificationStatus,
@@ -279,6 +279,16 @@ class DoctorService {
             : null,
         reviewedAt: new Date(),
         reviewedBy: reviewer.userId,
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: doctor.userId },
+      data: {
+        status:
+          verificationStatus === DoctorVeificationStatus.APPROVED
+            ? UserStatus.ACTIVE
+            : UserStatus.BLOCKED,
       },
     });
 
@@ -293,8 +303,6 @@ class DoctorService {
         status: verificationStatus,
         reviewedBy: reviewer.name,
         rejectedReason: payload.rejectedReason,
-        ctaUrl: `${config.frontend_url}/doctor/application`,
-        ctaText: "View Application",
         supportEmail: config.email_sender,
         year: new Date().getFullYear(),
       },

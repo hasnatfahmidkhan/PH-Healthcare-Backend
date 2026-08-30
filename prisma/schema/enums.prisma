@@ -44,3 +44,8 @@ enum DoctorVeificationStatus {
   APPROVED
   REJECTED
 }
+
+enum ScheduleStatus {
+  DRAFT
+  PUBLISHED
+}
